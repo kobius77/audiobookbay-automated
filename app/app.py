@@ -416,27 +416,29 @@ def status():
             
             torrent_list = []
             for t in transfers:
-                # Put.io 'percent_done' is 0-100 already
+                # put.io 'percent_done' is 0-100 already
                 progress = t.get("percent_done", 0)
+                # (t.get("size") or 0 to to avoid error 500?
+                size_bytes = t.get("size") or 0
                 
-                # Helper to format size bytes to MB
-                size_bytes = t.get("size", 0)
-                size_mb = f"{size_bytes / (1024 * 1024):.2f} MB"
+                # if size is 0, show "fetching meta.." instead of "0.00 MB"
+                if size_bytes == 0:
+                    size_mb = "fetching meta.."
+                else:
+                    size_mb = f"{size_bytes / (1024 * 1024):.2f} MB"
                 
                 torrent_list.append({
                     "name": t.get("name", "Unknown"),
                     "progress": progress,
-                    "state": t.get("status", "Unknown"), # e.g. "COMPLETED", "DOWNLOADING"
+                    "state": t.get("status", "Unknown"),
                     "size": size_mb
-                })
+            })
         # --- PUT.IO ADDITION END ---
 
         else:
             return jsonify({"message": "Unsupported download client"}), 400
             
         # Ensure we pass the list to the template
-        # (This line was previously inside each block in your code, but for consistency:
-        # qBittorrent and Putio blocks above assign to `torrent_list` then fall through here)
         return render_template("status.html", torrents=torrent_list)
         
     except Exception as e:
